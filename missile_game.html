@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Missile Command</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #000;
+            color: #0f0;
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+        canvas {
+            background: #000;
+            border: 2px solid #0f0;
+            display: block;
+        }
+        #info {
+            color: #0f0;
+            margin-top: 20px;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <h1>MISSILE COMMAND</h1>
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+    <div id="info">
+        <p>SCORE: <span id="score">0</span> | CITIES: <span id="cities">4</span></p>
+        <p>Click to fire defensive missiles</p>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        let score = 0;
+        let gameRunning = true;
+        
+        const cities = [
+            {x: 100, y: 550, alive: true},
+            {x: 300, y: 550, alive: true},
+            {x: 500, y: 550, alive: true},
+            {x: 700, y: 550, alive: true}
+        ];
+        
+        let enemyMissiles = [];
+        let playerExplosions = [];
+        
+        class EnemyMissile {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = 0;
+                this.targetX = Math.random() * canvas.width;
+                this.targetY = canvas.height - 50;
+                this.vx = (this.targetX - this.x) / 150;
+                this.vy = (this.targetY - this.y) / 150;
+            }
+            
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                return this.y >= this.targetY;
+            }
+            
+            draw() {
+                ctx.strokeStyle = '#f00';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(this.x, this.y);
+                ctx.lineTo(this.targetX, this.targetY);
+                ctx.stroke();
+            }
+        }
+        
+        class Explosion {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.radius = 0;
+                this.maxRadius = 80;
+                this.expanding = true;
+            }
+            
+            update() {
+                if (this.expanding) {
+                    this.radius += 3;
+                    if (this.radius >= this.maxRadius) {
+                        this.expanding = false;
+                    }
+                }
+                
+                for (let i = enemyMissiles.length - 1; i >= 0; i--) {
+                    const dist = Math.sqrt(Math.pow(enemyMissiles[i].x - this.x, 2) + Math.pow(enemyMissiles[i].y - this.y, 2));
+                    if (dist < this.radius) {
+                        score += 25;
+                        enemyMissiles.splice(i, 1);
+                    }
+                }
+            }
+            
+            draw() {
+                ctx.strokeStyle = '#ff8800';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+            
+            isDone() {
+                return !this.expanding && this.radius === this.maxRadius;
+            }
+        }
+        
+        function drawCities() {
+            cities.forEach(city => {
+                if (city.alive) {
+                    ctx.fillStyle = '#0f0';
+                    ctx.fillRect(city.x - 20, city.y, 40, 30);
+                }
+            });
+        }
+        
+        function checkCollisions() {
+            for (let i = enemyMissiles.length - 1; i >= 0; i--) {
+                if (enemyMissiles[i].y >= canvas.height - 50) {
+                    for (let j = 0; j < cities.length; j++) {
+                        if (cities[j].alive && 
+                            Math.abs(enemyMissiles[i].targetX - cities[j].x) < 50) {
+                            cities[j].alive = false;
+                        }
+                    }
+                    enemyMissiles.splice(i, 1);
+                }
+            }
+            
+            const aliveCities = cities.filter(c => c.alive).length;
+            document.getElementById('cities').textContent = aliveCities;
+            
+            if (aliveCities === 0) {
+                gameRunning = false;
+                alert('Game Over! Final Score: ' + score);
+            }
+        }
+        
+        function update() {
+            if (gameRunning) {
+                if (Math.random() < 0.02) {
+                    enemyMissiles.push(new EnemyMissile());
+                }
+                
+                enemyMissiles.forEach(m => m.update());
+                
+                playerExplosions.forEach(e => e.update());
+                playerExplosions = playerExplosions.filter(e => !e.isDone());
+                
+                checkCollisions();
+                
+                document.getElementById('score').textContent = score;
+            }
+        }
+        
+        function draw() {
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            drawCities();
+            enemyMissiles.forEach(m => m.draw());
+            playerExplosions.forEach(e => e.draw());
+        }
+        
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+        
+        canvas.addEventListener('click', (e) => {
+            if (!gameRunning) return;
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            playerExplosions.push(new Explosion(x, y));
+        });
+        
+        gameLoop();
+    </script>
+</body>
+</html>
