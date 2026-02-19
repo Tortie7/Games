@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Missile Command Game</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: black; color: white; }
+        canvas { display: block; margin: 0 auto; border: 1px solid white; }
+    </style>
+</head>
+<body>
+    <h1>Missile Command</h1>
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const cities = [{x: 100, y: 550}, {x: 300, y: 550}, {x: 500, y: 550}, {x: 700, y: 550}];
+        let missiles = []; // Incoming missiles
+        let explosions = []; // Explosions
+        let score = 0;
+        let wave = 0;
+        let gameOver = false;
+
+        function drawCities() {
+            ctx.fillStyle = 'green';
+            cities.forEach(city => {
+                ctx.fillRect(city.x, city.y, 40, 20);
+            });
+        }
+
+        function drawMissiles() {
+            ctx.fillStyle = 'red';
+            missiles.forEach(missile => {
+                ctx.fillRect(missile.x, missile.y, 5, 10);
+            });
+        }
+
+        function drawExplosions() {
+            explosions.forEach(explosion => {
+                ctx.fillStyle = 'orange';
+                ctx.beginPath();
+                ctx.arc(explosion.x, explosion.y, explosion.radius, 0, Math.PI * 2);
+                ctx.fill();
+            });
+        }
+
+        function update() {
+            if (gameOver) return;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawCities();
+            drawMissiles();
+            drawExplosions();
+
+            // Update missiles
+            missiles.forEach((missile, index) => {
+                missile.y += 5; // fall speed
+                if (missile.y > canvas.height) {
+                    missiles.splice(index, 1); // remove from array
+                }
+            });
+
+            // Check for collisions
+            missiles.forEach((missile, index) => {
+                cities.forEach((city, cityIndex) => {
+                    if (missile.x > city.x && missile.x < city.x + 40 && missile.y > city.y) {
+                        // Exploded!
+                        explosions.push({x: missile.x, y: missile.y, radius: 20});
+                        missiles.splice(index, 1); // remove missile
+                        cities.splice(cityIndex, 1); // destroy city
+                        score += 100;
+                        if (cities.length == 0) {
+                            gameOver = true;
+                        }
+                    }
+                });
+            });
+
+            // Spawn missiles based on wave
+            if (Math.random() < 0.02 + (wave * 0.01)) {  // Increased missile spawn rate with waves
+                missiles.push({x: Math.random() * canvas.width, y: 0});
+            }
+
+            wave = Math.floor(score / 500); // Increase wave based on score
+            requestAnimationFrame(update);
+        }
+
+        document.addEventListener('click', (event) => {
+            if (gameOver) { // Restart game
+                cities.forEach(city => { city.y = 550; });
+                score = 0;
+                gameOver = false;
+                missiles = [];
+                explosions = [];
+                wave = 0;
+                update();
+            }
+        });
+
+        update(); // Start game loop
+    </script>
+</body>
+</html>
