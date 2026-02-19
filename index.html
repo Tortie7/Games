@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Missile Command</title>
+    <style>
+        canvas {
+            border: 1px solid black;
+            background-color: lightblue;
+        }
+    </style>
+</head>
+<body>
+    <h1>Missile Command Game</h1>
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Game variables
+        let cities = [];
+        let missiles = [];
+        let score = 0;
+
+        function init() {
+            // Initialize cities and game elements
+            for (let i = 0; i < 5; i++) {
+                cities.push({ x: 100 + i * 140, y: 500, destroyed: false });
+            }
+            // Start the game loop
+            gameLoop();
+        }
+
+        function gameLoop() {
+            // Update game state
+            update();
+            // Draw everything
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        function update() {
+            // Update missile positions and other game logic here
+            // Check if cities are destroyed
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear canvas
+            // Draw cities
+            cities.forEach(city => {
+                if (!city.destroyed) {
+                    ctx.fillStyle = 'green';
+                    ctx.fillRect(city.x, city.y, 40, 20);
+                }
+            });
+            // Draw other game elements (missiles, explosions, etc.)
+        }
+
+        init();
+    </script>
+</body>
+</html>
